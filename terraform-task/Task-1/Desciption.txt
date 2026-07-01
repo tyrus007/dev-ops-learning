@@ -1,0 +1,4 @@
+1. Creates a local Minikube Kubernetes cluster with 2 nodes.
+2. Configures the Kubernetes provider to connect to the Minikube cluster.
+3. Deploys an Nginx Pod to the cluster.
+4. Verifies that the pod is running.
