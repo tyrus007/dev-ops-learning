@@ -13,6 +13,7 @@ resource "null_resource" "minikube_cluster" {
     cluster_name       = var.cluster_name
     node_count         = var.node_count
     driver             = var.driver
+    minikube_memory    = var.minikube_memory
     kubernetes_version = var.kubernetes_version
   }
 
@@ -21,24 +22,35 @@ resource "null_resource" "minikube_cluster" {
   # manager shortly after the API server is up; pod creation fails until it
   # exists, so we block on it here.
   provisioner "local-exec" {
+    interpreter = ["bash", "-c"]
+
     command = <<-EOT
+      set -euo pipefail
+
       minikube start \
         --profile="${var.cluster_name}" \
         --nodes=${var.node_count} \
         --driver="${var.driver}" \
+        --memory=${var.minikube_memory} \
         ${var.kubernetes_version != "" ? "--kubernetes-version=${var.kubernetes_version}" : ""}
 
       echo "Waiting for all nodes to be Ready..."
       kubectl --context="${var.cluster_name}" wait --for=condition=Ready nodes --all --timeout=120s
 
+      echo "Waiting for Kubernetes API readiness..."
+      kubectl --context="${var.cluster_name}" get --raw=/readyz >/dev/null
+
       echo "Waiting for the default service account..."
       for i in $(seq 1 30); do
         if kubectl --context="${var.cluster_name}" -n "${var.namespace}" get serviceaccount default >/dev/null 2>&1; then
           echo "default service account is present."
-          break
+          exit 0
         fi
         sleep 2
       done
+
+      echo "Timed out waiting for the default service account." >&2
+      exit 1
     EOT
   }
 

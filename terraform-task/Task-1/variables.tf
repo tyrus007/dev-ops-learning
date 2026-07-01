@@ -16,6 +16,12 @@ variable "driver" {
   default     = "docker"
 }
 
+variable "minikube_memory" {
+  description = "Memory (in MiB) to allocate to the Minikube VM/container. Requires enough RAM+swap to be available to Docker."
+  type        = string
+  default     = "1800mb"
+}
+
 variable "kubernetes_version" {
   description = "Kubernetes version for the Minikube cluster. Empty means Minikube's default."
   type        = string
